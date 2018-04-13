@@ -1,3 +1,0 @@
-<script>
-<%= instrumentXHRSnippetNoScript %>
-</script>
