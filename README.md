@@ -22,14 +22,11 @@
 ##  change log
 ### v1.0.1
 
-修改ios发送get信标问题
-添加配置  `beacon_type: "POST"` 默认发送信标为post方法
-
-修改上传性能日志目录为应用自己填写，不进行统一配置
-
-修改auto-xhr.js插件，在req send时向resource中添加rid，并设置BOOMR.rid 
-
-修改rt.js插件，在done时获取resource中的rid写入到信标中
+修改ios发送get信标问题<br/>
+添加配置  `beacon_type: "POST"` 默认发送信标为post方法<br/>
+修改上传性能日志目录为应用自己填写，不进行统一配置<br/>
+修改auto-xhr.js插件，在req send时向resource中添加rid，并设置BOOMR.rid <br/>
+修改rt.js插件，在done时获取resource中的rid写入到信标中<br/>
 
 
 
