@@ -1,3 +1,38 @@
+## 此插件是在雅虎的Boomerang.js基础上进行封装的工具
+使用时，配置plugins.json文件
+```
+{
+    "plugins": [
+        "plugins/auto-xhr.js",
+        "plugins/spa.js",
+        "plugins/history.js",
+        "plugins/rt.js",
+        "plugins/navtiming.js",
+        "plugins/restiming.js",
+        "plugins/mobile.js",
+        "plugins/memory.js",
+        "plugins/md5.js",
+        "plugins/errors.js"
+    ]
+}
+```
+以上插件是已经满足配置的插件列表
+
+————————————————————————————————————
+##  change log
+### v1.0.1
+
+修改ios发送get信标问题
+添加配置  `beacon_type: "POST"` 默认发送信标为post方法
+
+修改上传性能日志目录为应用自己填写，不进行统一配置
+
+修改auto-xhr.js插件，在req send时向resource中添加rid，并设置BOOMR.rid 
+
+修改rt.js插件，在done时获取resource中的rid写入到信标中
+
+
+
 * _Copyright (c) 2011, Yahoo! Inc.  All rights reserved._
 * _Copyright (c) 2011-2012, Log-Normal Inc.  All rights reserved._
 * _Copyright (c) 2012-2017 SOASTA, Inc. All rights reserved._

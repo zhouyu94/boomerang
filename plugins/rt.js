@@ -1535,8 +1535,12 @@
 				if (edata.responseBodyNotUsed) {
 					BOOMR.addVar("fetch.bnu", 1);
 				}
+				// add rid into beacon
+				if (edata.initiator == 'xhr') {
+				    BOOMR.addVar('rid', edata.rid);
+                }
 
-				impl.addedVars.push("http.errno", "http.method", "http.hdr", "xhr.sync", "http.initiator", "fetch.bnu");
+				impl.addedVars.push("http.errno", "http.method", "http.hdr", "xhr.sync", "http.initiator", "fetch.bnu", "rid");
 			}
 
 			// This is an explicit subresource
@@ -1567,7 +1571,7 @@
 			impl.updateCookie();
 
 			if (ename === "unload") {
-				BOOMR.addVar("rt.quit", "");
+				BOOMR.addVar("rt.quit", "quit");
 
 				if (!impl.onloadfired) {
 					BOOMR.addVar("rt.abld", "");

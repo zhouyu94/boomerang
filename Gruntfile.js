@@ -122,9 +122,9 @@ module.exports = function() {
 	//
 	// Output files
 	//
-
+	
 	// build file name is based on the version number
-	var buildFilePrefix = "boomerang-" + boomerangVersion;
+	var buildFilePrefix = "insight-" + boomerangVersion;
 	var buildPathPrefix = path.join(BUILD_PATH, buildFilePrefix);
 
 	var testBuildFilePrefix = "boomerang";
@@ -360,8 +360,8 @@ module.exports = function() {
 		},
 		uglify: {
 			options: {
-				banner: bannerString + "/* Boomerang Version: <%= boomerangVersion %> " +
-					(grunt.option("commit") || "<%= githash.main.hash %>") + " */\n"
+				// banner: bannerString + "/* Boomerang Version: <%= boomerangVersion %> " +
+				// 	(grunt.option("commit") || "<%= githash.main.hash %>") + " */\n"
 			},
 			default: {
 				options: DEFAULT_UGLIFY_BOOMERANGJS_OPTIONS,

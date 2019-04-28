@@ -735,7 +735,7 @@
 				if (typeof eventIndex === "number" && self.pending_events[eventIndex].aborted) {
 					// Save the URL otherwise it might change before we have a chance to put it on the beacon
 					BOOMR.addVar("pgu", d.URL);
-					BOOMR.addVar("rt.quit", "");
+					BOOMR.addVar("rt.quit", "quit");
 					BOOMR.addVar("rt.abld", "");
 
 					impl.addedVars.push("pgu", "rt.quit", "rt.abld");
@@ -2079,6 +2079,11 @@
 				}
 			};
 
+			// add rid into the resource
+			if (resource.initiator == 'xhr') {
+                BOOMR['rid'] = BOOMR.utils.generateId(10);
+                resource['rid'] = BOOMR.rid;
+            }
 			req.resource = resource;
 
 			return req;
