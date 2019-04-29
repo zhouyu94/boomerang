@@ -115,7 +115,8 @@
 	}
 
 
-	var _p_boomerang_plugin = Object.assign(BOOMR.plugins, {});
+ 	var _p_boomerang_plugin = BOOMR.window.BOOMR.plugins;
+
 	var _boomerang_plugin = {};
     /**
      * 配置初始化，只初始化上报数据的地址以及Boomerang的debug日志不进行输出
@@ -144,10 +145,10 @@
 		})
 		if (o.hasOwnProperty(_P_AUTOXHR) && o[_P_AUTOXHR].enable === true) {
 			if (!_boomerang_plugin.hasOwnProperty(_P_RT)) {
-				_boomerang_plugin = Object.assign(_boomerang_plugin, { RT: _p_boomerang_plugin[_P_RT] });
+				_boomerang_plugin = toExtend(_boomerang_plugin, { RT: _p_boomerang_plugin[_P_RT] });
 			}
 		}
-		BOOMR.window.BOOMR.plugins = Object.assign({}, _boomerang_plugin);
+		BOOMR.window.BOOMR.plugins = toPlainObject(_boomerang_plugin);
 		BOOMR.window.BOOMR.subscribe('xhr_send', function (req) {
 			if (config[_P_USERID]) {
 				req.setRequestHeader('P-User-Id', config[_P_USERID]());
@@ -240,7 +241,7 @@
 	}
 
 	function _parseConfig(c, p) {
-		base_config = Object.assign(_openPlugs(p, c), base_config);
+		base_config = toExtend(_openPlugs(p, c), base_config);
 	}
 
 	var INSIGHT = {
@@ -253,7 +254,7 @@
          */
 		init: function (config) {
 			var del_plugs = [];
-			var _user_config = Object.assign({}, config);
+			var _user_config = toPlainObject(config);
 			for (var i = 0, ilth = _plugs.length; i < ilth; i++) {
 				var _plug = _plugs[i];
 				var _config = _user_config[_plug];
@@ -289,7 +290,7 @@
 			}
 			// if (Object.prototype.toString.call(_user_config) === '[object Object]' && _user_config != {}) {
 			// 	if (_user_config['xhr_excludes'] !== undefined) {
-			// 		base_config = Object.assign(base_config, { xhr_excludes: _user_config['xhr_excludes'] });
+			// 		base_config = toExtend(base_config, { xhr_excludes: _user_config['xhr_excludes'] });
 			// 	}
 			// }
 			initEnd(base_config, del_plugs);
@@ -317,4 +318,20 @@
 			return Object.prototype.toString.call(value) === "[object Array]";
 		}
 	}
+	function toPlainObject(value) {
+		value = Object(value)
+		var result = {}
+		for (var key in value) {
+		  result[key] = value[key]
+		}
+		return result
+	}
+	// return o, o will owerwrite n
+	function toExtend(o,n){
+		for (var p in n){
+			if(n.hasOwnProperty(p) && (!o.hasOwnProperty(p) ))
+				o[p]=n[p];
+		}
+		return o;
+	};   
 }(window));
