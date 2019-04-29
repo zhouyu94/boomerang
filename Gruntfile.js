@@ -113,9 +113,12 @@ module.exports = function() {
 	// Build numbers
 	//
 	var pkg = grunt.file.readJSON("package.json");
+	grunt.option("build-number", pkg.buildNumber);
+	grunt.option("build-revision", pkg.revision);
 	var buildNumber = grunt.option("build-number") || 0;
 	var releaseVersion = pkg.releaseVersion + "." + buildNumber;
 	var buildRevision = grunt.option("build-revision") || 0;
+	console.log(releaseVersion, buildRevision)
 	var boomerangVersion = releaseVersion + "." + buildRevision;
 	var buildSuffix = grunt.option("build-suffix") ? (grunt.option("build-suffix") + ".") : "";
 
