@@ -1613,6 +1613,7 @@
 
 			try {
 				resource.timing.requestStart = BOOMR.now();
+				arguments[1].headers = INSIGHT.toExtend(resource.headers, arguments[1].headers);
 				var promise = BOOMR.orig_fetch.apply(this, arguments);
 
 				/**

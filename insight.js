@@ -1,5 +1,5 @@
 /**
- * v 1.0.0
+ * v 1.0.2
  * 前端性能监控工具，引用Boomerang
  * 向外暴露一个plugs数组以及一个init方法
  * plugs数组用来表示可以进行配置的参数
@@ -150,11 +150,21 @@
 		}
 		BOOMR.window.BOOMR.plugins = toPlainObject(_boomerang_plugin);
 		BOOMR.window.BOOMR.subscribe('xhr_send', function (req) {
-			if (config[_P_USERID]) {
-				req.setRequestHeader('P-User-Id', config[_P_USERID]());
+			if (req && req.resource && req.resource.type === 'xhr') {
+				if (config[_P_USERID]) {
+					req.setRequestHeader('P-User-Id', config[_P_USERID]());
+				}
+				req.setRequestHeader('P-Request-Id', BOOMR.rid);
+				req.setRequestHeader('P-Page-Id', BOOMR.window.BOOMR.pageId);
+			} else if (req && req.resource && req.resource.type === 'fetch') {
+				BOOMR['rid'] = BOOMR.utils.generateId(10);
+				req.resource['rid'] = BOOMR.rid;
+				var header = {'P-Request-Id': BOOMR.rid, 'P-Page-Id': BOOMR.window.BOOMR.pageId};
+				if (config[_P_USERID]) {
+					header = toExtend(header, {'P-User-Id': config[_P_USERID]()});
+				}
+				req.resource.headers = header;
 			}
-            req.setRequestHeader('P-Request-Id', BOOMR.rid);
-            req.setRequestHeader('P-Page-Id', BOOMR.window.BOOMR.pageId);
 		});
 		BOOMR.window.BOOMR.init(o);
 		var ua = new UAParser(w.navigator.userAgent);
@@ -294,7 +304,8 @@
 			// 	}
 			// }
 			initEnd(base_config, del_plugs);
-		}
+		},
+		toExtend: toExtend,
 	};
 
 	if (!w.INSIGHT) {
