@@ -4789,7 +4789,7 @@ BOOMR_check_doc_domain();
 
 }(window));
 /**
- * v 1.0.2s
+ * v 1.0.2
  * 前端性能监控工具，引用Boomerang
  * 向外暴露一个plugs数组以及一个init方法
  * plugs数组用来表示可以进行配置的参数
