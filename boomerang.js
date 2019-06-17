@@ -4788,161 +4788,180 @@ BOOMR_check_doc_domain();
 	}
 
 }(window));
-/**
- * v 1.0.2
- * 前端性能监控工具，引用Boomerang
- * 向外暴露一个plugs数组以及一个init方法
- * plugs数组用来表示可以进行配置的参数
- * 
- * init方法用来初始化监控的可配置参数
- * 可选参数包括：
- *      Errors, Memory, Mobile, Resourcetiming, Spa
- * 使用方法：
- *      Errors: 如果只是开启Errors监控，不需要进行任何配置时，使用Errors: 'enable'；
- *              如果需要进行配置时，使用： 	Errors: {
- *                                          monitorGlobal: true,  //监控全局错误
- *                                          monitorNetwork: true,  //监控网络错误
- *                                          monitorConsole: true,  //监控console的错误
- *                                          monitorEvents: true,  //监控事件错误
- *                                          monitorTimeout: true,  //监控setTimout 和 setInterval错误
- *                                          sendAfterOnload: true,  //开启页面加载完成之后发送错误信息
- *                                          sendInterval: true,  //如果sendAfterOnload为true时，收集所有错误后进行发送
- *                                          maxErrors: 10,  //监控页面最大错误数，默认10
- *                                      }
- *      Momory: 如果开启Memory监控时，配置Errors: 'enable'即可，不需要进行Memory监控时，不进行配置
- *      Mobile：如果开启Mobile监控时，配置Mobile: 'enable'即可，不需要进行Mobile监控时，不进行配置
- *      Resourcetiming： 开启时使用Resourcetiming: 'enable'；
- *      Spa：   如果页面为单页应用时，配置Spa: 'enable'即可，不是单页应用不进行配置            
- */
 (function (w) {
-	var _TRUE = true,
-		_FALSE = false,
-		_ENABLE = 'enable',
-		_P_URL = 'UpUrl',
-		_P_AUTOXHR = 'AutoXHR',
-		_P_ERRORS = 'Errors',
-		_P_HISTORY = 'History',
-		_P_MEMORY = 'Memory',
-		_P_MOBILE = 'Mobile',
-		_P_NAVIGATIONTIMING = 'NavigationTiming',
-		_P_RESOURCETIMING = 'ResourceTiming',
-		_P_RT = 'RT',
-		_P_SPA = 'SPA',
-		_P_USERID = 'UserId',
-		_P_USERNAME = 'UserName',
-        _P_SERVICENAME = 'ServiceName';
-	/**
-     * 约定用户可以根据自己的情况进行自选配置的插件
-     * 其中AutoXHR可以通过excludes字段进行过滤配置，Errors通过对象进行配置
-     * Errors接收的是对象
-     * AutoXHR的excludes字段接收的是url数组
-     * 其他不可以进行过滤配置，只是进行是否打开配置
-	 * 使用示例：
-	 * 
-	 *  INSIGHT.init({
-            AutoXHR: {
-                instrument_xhr: true,
-                alwaysSendXhr: function(urls){
-                    console.log(urls, urls.indexOf('.html') , urls.indexOf('operationMonitor/addTimeMonitor'))
-                    if (urls.indexOf('.html') > -1 || urls.indexOf('operationMonitor/addTimeMonitor') > -1) {
-                        return false;
-                    }
-                    return true;
-                },
-                monitorFetch: true,
-                captureXhrRequestResponse: true
-            },
-            SPA: 'enable',
-            // Errors: {
-            //     monitorConsole: true,
-            //     monitorGlobal: true,
-            //     monitorNetwork: true,
-            //     monitorEvents: true,
-            //     monitorTimeout: true,
-            //     sendAfterOnload: true,
-            //     sendInterval: true
-            // },
-            History: {
-                enable: true,
-                auto: true
-            },
-            // Memory: 'enable',
-            // Mobile: 'enable',
-            // NavigationTiming: 'enable',
-            // ResourceTiming: 'enable',
-            // RT: 'enable',
-            UserId: function () {
-                return 'admin';
-            },
-            UserName: function (){
-                return '爆锤张大大';
-            },
-            SystemName: function(){
-                return 'tyyy_pc';
-            }
-        });
-     */
-	var _plugs = [
-		'UpUrl',
-		'AutoXHR',
-		'Errors',
-		'History',
-		'Memory',
-		'Mobile',
-		'NavigationTiming',
-		'ResourceTiming',
-		'RT',
-		'SPA',
-		'UserId',
-		'UserName',
-		'ServiceName'
-	];
+	// this is commons
+	var _p_commons = {
+		TRUE: true,
+		FALSE: false,
+		ENABLE: "enable",
+		UPURL: "UpUrl",
+		AUTOXHR: {
+			name: "AutoXHR",
+			alwaysSendXhr: "alwaysSendXhr",
+			monitorFetch: "monitorFetch",
+			captureXhrRequestResponse: "captureXhrRequestResponse"
+		},
+		ERRORS: {
+			name: "Errors",
+			onError: "onError",
+			monitorGlobal: "monitorGlobal",
+			monitorNetwork: "monitorNetwork",
+			monitorConsole: "monitorConsole",
+			monitorEvents: "monitorEvents",
+			monitorTimeout: "monitorTimeout",
+			sendAfterOnload: "sendAfterOnload",
+			sendInterval: "sendInterval",
+			maxErrors: "maxErrors",
+			maxErrorsDefaultNum: 50
 
-	var _p_addArr = {
-		uid: 'UserId',
-		uname: 'UserName',
-		sn: 'ServiceName'
-	}
+		},
+		SPA: {name: "SPA"},
+		HISTORY: { name: "History", auto: "auto" },
+		RESOURCETIMING: {
+			name: "ResourceTiming",
+			trimUrls: "trimUrls",
+			defaultTrimUrls: []
+		},
+		RT: "RT",
+		USERID: "UserId",
+		USERNAME: "UserName",
+		SERVICENAME: "ServiceName",
+		TOEXTEND: function toExtend(o,n){
+			for (var p in n){
+				if(n.hasOwnProperty(p) && (!o.hasOwnProperty(p) ))
+					o[p]=n[p];
+			}
+			return o;
+		},
+		TOPLAINOBJECT: function (v) {
+			var value = Object(v);
+			var result = {};
+			for (var key in value) {
+				result[key] = value[key]
+			}
+			return result;
+		}
 
+	};
+	// this is use to declare variable
+	// _p_plugs: this is all allow config plugs
+	// _p_addvars: this is allow add fields to BOOMERANG
+	// _p_del_plugs: this is remove plugs from BOOMERANG
+	// _p_enable_plugs: this is open plugs from BOOMERANG
+	// _p_boomerang_plugs: this is all package BOOMERANG plugs
+	var _p_plugs = [], _p_addvars = {}, _p_del_plugs = [], _p_enable_plugs = {},_p_boomerang_plugs;
 
- 	var _p_boomerang_plugin = BOOMR.window.BOOMR.plugins;
-
-	var _boomerang_plugin = {};
-    /**
-     * 配置初始化，只初始化上报数据的地址以及Boomerang的debug日志不进行输出
-     */
+	// base config, to init BOOMERANG
 	var base_config = {
 		beacon_type: "POST",
 		log: false
 	};
 
-	function initEnd(config, del_plugs) {
-		var o = {};
-		for (var k in config) {
-			if (k == 'Spa') {
-				o['History'] = {
-					auto: true,
-					enabled: true
+	// register config, add param to any plugs
+	var _register = {
+		UpUrl: function (c) {
+			base_config = _p_commons.TOEXTEND({beacon_url: c}, base_config);
+		},
+		AutoXHR: function (c) {
+			var _c = {
+				instrument_xhr: _p_commons.TRUE,
+				autorun: _p_commons.TRUE,
+				AutoXHR: {
+					enable: _p_commons.TRUE,
+					alwaysSendXhr: c[_p_commons.AUTOXHR.alwaysSendXhr] || _p_commons.FALSE,
+					monitorFetch: c[_p_commons.AUTOXHR.monitorFetch] || _p_commons.FALSE,
+					captureXhrRequestResponse: c[_p_commons.AUTOXHR.captureXhrRequestResponse] || _p_commons.FALSE
 				}
-			} else {
-				o[k] = config[k];
+			};
+			base_config = _p_commons.TOEXTEND(_c, base_config);
+		},
+		Errors: function (c) {
+			var _c = {
+				Errors: {
+					onError: (c[_p_commons.ERRORS.onError] || _p_commons.FALSE) ? c[_p_commons.ERRORS.onError] : function () {return true},
+					monitorGlobal: c[_p_commons.ERRORS.monitorGlobal] || _p_commons.FALSE,
+					monitorNetwork: c[_p_commons.ERRORS.monitorNetwork] || _p_commons.FALSE,
+					monitorConsole: c[_p_commons.ERRORS.monitorConsole] || _p_commons.FALSE,
+					monitorEvents: c[_p_commons.ERRORS.monitorEvents] || _p_commons.FALSE,
+					monitorTimeout: c[_p_commons.ERRORS.monitorTimeout] || _p_commons.FALSE,
+					sendAfterOnload: c[_p_commons.ERRORS.sendAfterOnload] || _p_commons.FALSE,
+					sendInterval: c[_p_commons.ERRORS.sendInterval] || _p_commons.FALSE,
+					maxErrors: c[_p_commons.ERRORS.maxErrors] || _p_commons.ERRORS.maxErrorsDefaultNum
+				}
+			};
+			base_config = _p_commons.TOEXTEND(_c, base_config);
+		},
+		History: function (c) {
+			var _c = {
+				instrument_xhr: true,
+				autorun: true,
+				History: {
+					enabled: _p_commons.TRUE,
+					auto: c[_p_commons.HISTORY.auto] || _p_commons.FALSE
+				},
+				Spa: _p_commons.ENABLE
+			};
+			base_config = _p_commons.TOEXTEND(_c, base_config);
+		},
+		ResourceTiming: function (c) {
+			var _c = {
+				ResourceTiming: {
+					trimUrls: c[_p_commons.RESOURCETIMING.trimUrls] || _p_commons.RESOURCETIMING.defaultTrimUrls
+				}
+			};
+			base_config = _p_commons.TOEXTEND(_c, base_config);
+		},
+		Spa: function (c) {
+			var _c = {
+				instrument_xhr: true,
+				autorun: true,
+				SPA: _p_commons.ENABLE,
+				History: {
+					auto: true,
+					enabled: _p_commons.TRUE
+				}
+			};
+			base_config = _p_commons.TOEXTEND(_c, base_config);
+		},
+		UserId: function (c) {
+			base_config = _p_commons.TOEXTEND({UserId: c}, base_config);
+		},
+		UserName: function (c) {
+			base_config = _p_commons.TOEXTEND({UserName: c}, base_config);
+		},
+		ServiceName: function (c) {
+			base_config = _p_commons.TOEXTEND({ServiceName: c}, base_config);
+		},
+		StringConfig: function(f, c) {
+			var _c = {};
+			_c[f] = c;
+			base_config = _p_commons.TOEXTEND(_c, base_config);
+		}
+	};
+
+	// init BOOMERANG plugs
+	var initPlugs = function () {
+		if (_p_del_plugs.indexOf(_p_commons.SPA.name) > -1 || _p_del_plugs.indexOf(_p_commons.HISTORY.name) >-1) {
+			_g.removeDelPlugs(_p_commons.SPA.name);
+			_g.removeDelPlugs(_p_commons.HISTORY.name);
+		}
+		Object.keys(_p_boomerang_plugs).forEach(function (key) {
+			if (_p_del_plugs.indexOf(key) === -1) {
+				_p_enable_plugs[key] = _p_boomerang_plugs[key];
+			}
+		});
+		if (_p_enable_plugs.hasOwnProperty(_p_commons.AUTOXHR) && _p_enable_plugs[_p_commons.AUTOXHR.name].enable === _p_commons.TRUE) {
+			if (!_p_enable_plugs.hasOwnProperty(_p_commons.RT)) {
+				_p_enable_plugs = _p_commons.TOEXTEND(_p_enable_plugs, {RT: _p_boomerang_plugs[_p_commons.RT]});
 			}
 		}
-		Object.keys(_p_boomerang_plugin).forEach(function (key) {
-			if (del_plugs.indexOf(key) == -1) {
-				_boomerang_plugin[key] = _p_boomerang_plugin[key];
-			}
-		})
-		if (o.hasOwnProperty(_P_AUTOXHR) && o[_P_AUTOXHR].enable === true) {
-			if (!_boomerang_plugin.hasOwnProperty(_P_RT)) {
-				_boomerang_plugin = toExtend(_boomerang_plugin, { RT: _p_boomerang_plugin[_P_RT] });
-			}
-		}
-		BOOMR.window.BOOMR.plugins = toPlainObject(_boomerang_plugin);
+		BOOMR.window.BOOMR.plugins = _p_commons.TOPLAINOBJECT(_p_enable_plugs);
+	};
+	var addHeaders = function () {
 		BOOMR.window.BOOMR.subscribe('xhr_send', function (req) {
 			if (req && req.resource && req.resource.type === 'xhr') {
-				if (config[_P_USERID]) {
-					req.setRequestHeader('P-User-Id', config[_P_USERID]());
+				if (base_config[_p_commons.USERID]) {
+					req.setRequestHeader('P-User-Id', base_config[_p_commons.USERID]());
 				}
 				req.setRequestHeader('P-Request-Id', BOOMR.rid);
 				req.setRequestHeader('P-Page-Id', BOOMR.window.BOOMR.pageId);
@@ -4950,189 +4969,106 @@ BOOMR_check_doc_domain();
 				BOOMR['rid'] = BOOMR.utils.generateId(10);
 				req.resource['rid'] = BOOMR.rid;
 				var header = {'P-Request-Id': BOOMR.rid, 'P-Page-Id': BOOMR.window.BOOMR.pageId};
-				if (config[_P_USERID]) {
-					header = toExtend(header, {'P-User-Id': config[_P_USERID]()});
+				if (base_config[_p_commons.USERID]) {
+					header = _p_commons.TOEXTEND(header, {'P-User-Id': base_config[_p_commons.USERID]()});
 				}
 				req.resource.headers = header;
 			}
 		});
-		BOOMR.window.BOOMR.init(o);
+	};
+
+	var addVars = function () {
 		var ua = new UAParser(w.navigator.userAgent);
 		BOOMR.window.BOOMR.addVar('o.n', ua.getOS().name)
 			.addVar('o.v', ua.getOS().version)
 			.addVar('b.n', ua.getBrowser().name)
 			.addVar('b.v', ua.getBrowser().version)
 			.addVar('b.m', ua.getBrowser().major);
-		for (var k in _p_addArr) {
-			BOOMR.window.BOOMR.addVar(k, config[_p_addArr[k]]())
-		}			
-	}
-
-	function _openPlugs(p, c, config) {
-		var _pConfig = {};
-		switch (p) {
-			case _P_URL:
-				_pConfig['beacon_url'] = c;
-				break;
-			case _P_AUTOXHR:
-				_pConfig['instrument_xhr'] = _TRUE;
-				_pConfig['autorun'] = _TRUE;
-				_pConfig[_P_AUTOXHR] = {
-					enable: _TRUE,
-					alwaysSendXhr: c['alwaysSendXhr'] || _FALSE,
-					monitorFetch: c['monitorFetch'] || _FALSE,
-					captureXhrRequestResponse: c['captureXhrRequestResponse'] || _FALSE
-				};
-				break;
-			case _P_ERRORS:
-				var fn = c['onError'] || _FALSE;
-				_pConfig[_P_ERRORS] = {
-					onError: fn ? fn : function () { return true },
-					monitorGlobal: c['monitorGlobal'] || _FALSE,
-					monitorNetwork: c['monitorNetwork'] || _FALSE,
-					monitorConsole: c['monitorConsole'] || _FALSE,
-					monitorEvents: c['monitorEvents'] || _FALSE,
-					monitorTimeout: c['monitorTimeout'] || _FALSE,
-					sendAfterOnload: c['sendAfterOnload'] || _FALSE,
-					sendInterval: c['sendInterval'] || _FALSE,
-					maxErrors: c['maxErrors'] || 50
-				};
-				break;
-			case _P_HISTORY:
-				_pConfig[_P_HISTORY] = {
-					enabled: true,
-					auto: c['auto'] || false
-				};
-				break;
-			case _P_MEMORY:
-				break;
-			case _P_MOBILE:
-				break;
-			case _P_NAVIGATIONTIMING:
-				break;
-			case _P_RESOURCETIMING:
-				_pConfig[_P_RESOURCETIMING] = {
-					trimUrls: c['trimUrls'] || []
-				};
-				break;
-			// rt未进行实现
-			case _P_RT:
-				break;
-			case _P_SPA:
-				_pConfig = {
-					instrument_xhr: true,
-					autorun: true,
-					SPA: 'enable'
-				};
-				break;
-				case _P_USERID:
-				_pConfig[_P_USERID] = c;
-				break;
-			case _P_USERNAME:
-				_pConfig[_P_USERNAME] = c;
-				break;
-			case _P_SERVICENAME:
-				_pConfig[_P_SERVICENAME] = c;
-				break;
-			default:
-				break;
+		for (var k in _p_addvars) {
+			BOOMR.window.BOOMR.addVar(k, base_config[_p_addvars[k]]())
 		}
-		return _pConfig;
-	}
+	};
 
-	function _parseConfig(c, p) {
-		base_config = toExtend(_openPlugs(p, c), base_config);
-	}
+	var _g = {
+		checkConfig: function (f, c) {
+			return c.hasOwnProperty(f);
+		},
+		doConfig: function (f, c) {
+			var __config = c[f];
+			if (__config !== {} && Object.prototype.toString.call(__config) === "[object Object]") {
+				_g.objectConfig(f, __config);
+			} else if (__config !== "" && Object.prototype.toString.call(__config) === "[object String]") {
+				_g.stringConfig(f, __config);
+			} else if (Object.prototype.toString.call(__config) === "[object Function]") {
+				_g.functionConfig(f, __config)
+			} else {
+				_p_del_plugs.push(f);
+			}
+		},
+		stringConfig: function(f, c) {
+			if (c === _p_commons.ENABLE) {
+				_register.StringConfig(f, c);
+			} else if (f === _p_commons.UPURL){ 
+				_register[f](c);
+			} else {
+				_p_del_plugs.push(f);
+			}
+		},
+		objectConfig: function(f, c) {
+			if (c[_p_commons.ENABLE] !== false || c[_p_commons.ENABLE] === undefined) {
+				_register[f](c);
+			} else {
+				_p_del_plugs.push(f);
+			}
+		},
+		functionConfig: function(f, c) {
+			_register[f](c);
+		},
+		removeDelPlugs: function(f) {
+			for(var i = 0, ilth = _p_del_plugs.length; i < ilth; i ++) {
+				if (_p_del_plugs[i] === f) {
+					_p_del_plugs.splice(i, 1);
+					break;
+				}
+			}
+		},
+		init: function (c) {
+			if (!_g.checkConfig(_p_commons.UPURL, c)) {
+				log("not yet config UpUrl, plugin init unsuccessful");
+				return;
+			}
+			if (!_g.checkConfig(_p_commons.SERVICENAME, c)) {
+				log("not yet config ServiceName, plugin init unsuccessful");
+				return;
+			}
+			for (var i = 0, ilth = _p_plugs.length; i < ilth; i++) {
+				_g.doConfig(_p_plugs[i], c);
+			}
+			initPlugs();
+			BOOMR.window.BOOMR.init(base_config);
+			addHeaders();
+			addVars();
+		},
+	};
 
 	var INSIGHT = {
-		plugs: _plugs,
-        /**
-         * 初始化用户配置
-         * @param {用户配置} config 
-         * 通过遍历提供的插件与用户配置进行匹配判断
-         * 如果是对象的化，判断是否是AutoXHR,Errors
-         */
-		init: function (config) {
-			var del_plugs = [];
-			var _user_config = toPlainObject(config);
-			for (var i = 0, ilth = _plugs.length; i < ilth; i++) {
-				var _plug = _plugs[i];
-				var _config = _user_config[_plug];
-				// 先判断支持的插件中是否包含用户配置的插件
-				if (_plug === 'UpUrl') {
-					_parseConfig(_config, _plug, config);
-				} else if (_config !== undefined) {
-					// 判断用户配置的插件的值是对象还是字符串
-					if (Object.prototype.toString.call(_config) === '[object Object]' && _config != {}) {
-						// 如果是对象的话，解析对象中的值
-						if (_config[_ENABLE] !== false || _config[_ENABLE] !== undefined) {
-							_parseConfig(_config, _plug, config);
-						} else {
-							// 插件关闭，不进行配置
-							del_plugs.push(_plug);
-						}
-					} else if (Object.prototype.toString.call(_config) === '[object String]') {
-						// 如果是字符串的话，将插件的默认配置添加至配置中
-						if (_config === _ENABLE) {
-							_parseConfig(_config, _plug, config);
-						} else {
-							del_plugs.push(_plug);
-						}
-					} else if (Object.prototype.toString.call(_config) === '[object Function]') {
-						if (_plug === _P_USERID || _plug === _P_SERVICENAME || _plug === _P_USERNAME) {
-							_parseConfig(_config, _plug, config);
-						}
-					}
-				} else {
-					del_plugs.push(_plug);
-				}
-				delete _user_config[_plug];
-			}
-			// if (Object.prototype.toString.call(_user_config) === '[object Object]' && _user_config != {}) {
-			// 	if (_user_config['xhr_excludes'] !== undefined) {
-			// 		base_config = toExtend(base_config, { xhr_excludes: _user_config['xhr_excludes'] });
-			// 	}
-			// }
-			initEnd(base_config, del_plugs);
-		},
-		toExtend: toExtend,
+		plugs: _p_plugs,
+		init: _g.init,
 	};
 
 	if (!w.INSIGHT) {
 		w.INSIGHT = INSIGHT;
 	}
 
-	function pIsListAndNoNull(list) {
-		if (!isArrayFn(list)) {
-			return false;
-		}
-		if (!list.length && list.length < 1) {
-			return false;
-		}
-		return true;
-	}
+	(function (w) {
+		// if you want to add plugs, pls add plugs name to here
+		_p_plugs = ['UpUrl', 'AutoXHR', 'Errors', 'History', 'Memory', 'Mobile', 'NavigationTiming',
+			'ResourceTiming', 'RT', 'SPA', 'UserId', 'UserName', 'ServiceName'
+		];
+		// if you want to add request header of xhr, pls add filed to hear
+		_p_addvars = {uid: 'UserId', uname: 'UserName', sn: 'ServiceName'};
+		_p_boomerang_plugs = BOOMR.window.BOOMR.plugins;
 
-	function isArrayFn(value) {
-		if (typeof Array.isArray === "function") {
-			return Array.isArray(value);
-		} else {
-			return Object.prototype.toString.call(value) === "[object Array]";
-		}
-	}
-	function toPlainObject(value) {
-		value = Object(value)
-		var result = {}
-		for (var key in value) {
-		  result[key] = value[key]
-		}
-		return result
-	}
-	// return o, o will owerwrite n
-	function toExtend(o,n){
-		for (var p in n){
-			if(n.hasOwnProperty(p) && (!o.hasOwnProperty(p) ))
-				o[p]=n[p];
-		}
-		return o;
-	};   
+	}(w));
+
 }(window));
