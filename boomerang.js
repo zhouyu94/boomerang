@@ -4826,6 +4826,7 @@ BOOMR_check_doc_domain();
 		USERID: "UserId",
 		USERNAME: "UserName",
 		SERVICENAME: "ServiceName",
+		EXTINFO: "ExtInfo",
 		TOEXTEND: function toExtend(o,n){
 			for (var p in n){
 				if(n.hasOwnProperty(p) && (!o.hasOwnProperty(p) ))
@@ -4931,6 +4932,9 @@ BOOMR_check_doc_domain();
 		},
 		ServiceName: function (c) {
 			base_config = _p_commons.TOEXTEND({ServiceName: c}, base_config);
+		},
+		ExtInfo: function (c) {
+			base_config = _p_commons.TOEXTEND({ExtInfo: c}, base_config);
 		},
 		StringConfig: function(f, c) {
 			var _c = {};
@@ -5063,10 +5067,10 @@ BOOMR_check_doc_domain();
 	(function (w) {
 		// if you want to add plugs, pls add plugs name to here
 		_p_plugs = ['UpUrl', 'AutoXHR', 'Errors', 'History', 'Memory', 'Mobile', 'NavigationTiming',
-			'ResourceTiming', 'RT', 'SPA', 'UserId', 'UserName', 'ServiceName'
+			'ResourceTiming', 'RT', 'SPA', 'UserId', 'UserName', 'ServiceName', "ExtInfo"
 		];
 		// if you want to add request header of xhr, pls add filed to hear
-		_p_addvars = {uid: 'UserId', uname: 'UserName', sn: 'ServiceName'};
+		_p_addvars = {uid: 'UserId', uname: 'UserName', sn: 'ServiceName', ext: "ExtInfo"};
 		_p_boomerang_plugs = BOOMR.window.BOOMR.plugins;
 
 	}(w));
