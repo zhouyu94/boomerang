@@ -3426,12 +3426,16 @@ BOOMR_check_doc_domain();
 			// change the first parameter prefix for the boomerang url parameters to &
 			url = impl.beacon_url + ((impl.beacon_url.indexOf("?") > -1) ? "&" : "?") + paramsJoined;
 
-			// check the http.initiator is null , if null ,think this beacon is page beacon
-			if (paramsJoined.indexOf('http.initiator') == -1) {
-				paramsJoined = paramsJoined + '&http.initiator=page';
+			// Determine whether it is a SPA application. 
+			// If yes, determine if the `http.initiator` is empty or does not have the `http.initiator` field. 
+			// If there is such a situation, put this data in an array and wait for `the http.initiator` type to be `spa_hard`.
+			// After that, change the pid of `http.initiator` to empty to spa_hard.
+			if (INSIGHT.spajudge) {
+				if (INSIGHT.spajudge(data)) {
+					return true;
+				}
 			}
 
-			//
 			// Try to send an IMG beacon if possible (which is the most compatible),
 			// otherwise send an XHR beacon if the  URL length is longer than 2,000 bytes.
 			//
@@ -4815,7 +4819,7 @@ BOOMR_check_doc_domain();
 			maxErrorsDefaultNum: 50
 
 		},
-		SPA: {name: "SPA"},
+		SPA: { name: "SPA" },
 		HISTORY: { name: "History", auto: "auto" },
 		RESOURCETIMING: {
 			name: "ResourceTiming",
@@ -4827,10 +4831,10 @@ BOOMR_check_doc_domain();
 		USERNAME: "UserName",
 		SERVICENAME: "ServiceName",
 		EXTINFO: "ExtInfo",
-		TOEXTEND: function toExtend(o,n){
-			for (var p in n){
-				if(n.hasOwnProperty(p) && (!o.hasOwnProperty(p) ))
-					o[p]=n[p];
+		TOEXTEND: function toExtend(o, n) {
+			for (var p in n) {
+				if (n.hasOwnProperty(p) && (!o.hasOwnProperty(p)))
+					o[p] = n[p];
 			}
 			return o;
 		},
@@ -4850,7 +4854,7 @@ BOOMR_check_doc_domain();
 	// _p_del_plugs: this is remove plugs from BOOMERANG
 	// _p_enable_plugs: this is open plugs from BOOMERANG
 	// _p_boomerang_plugs: this is all package BOOMERANG plugs
-	var _p_plugs = [], _p_addvars = {}, _p_del_plugs = [], _p_enable_plugs = {},_p_boomerang_plugs;
+	var _p_plugs = [], _p_addvars = {}, _p_del_plugs = [], _p_enable_plugs = {}, _p_boomerang_plugs, _p_spa_data = [];
 
 	// base config, to init BOOMERANG
 	var base_config = {
@@ -4861,7 +4865,7 @@ BOOMR_check_doc_domain();
 	// register config, add param to any plugs
 	var _register = {
 		UpUrl: function (c) {
-			base_config = _p_commons.TOEXTEND({beacon_url: c}, base_config);
+			base_config = _p_commons.TOEXTEND({ beacon_url: c }, base_config);
 		},
 		AutoXHR: function (c) {
 			var _c = {
@@ -4879,7 +4883,7 @@ BOOMR_check_doc_domain();
 		Errors: function (c) {
 			var _c = {
 				Errors: {
-					onError: (c[_p_commons.ERRORS.onError] || _p_commons.FALSE) ? c[_p_commons.ERRORS.onError] : function () {return true},
+					onError: (c[_p_commons.ERRORS.onError] || _p_commons.FALSE) ? c[_p_commons.ERRORS.onError] : function () { return true },
 					monitorGlobal: c[_p_commons.ERRORS.monitorGlobal] || _p_commons.FALSE,
 					monitorNetwork: c[_p_commons.ERRORS.monitorNetwork] || _p_commons.FALSE,
 					monitorConsole: c[_p_commons.ERRORS.monitorConsole] || _p_commons.FALSE,
@@ -4925,18 +4929,18 @@ BOOMR_check_doc_domain();
 			base_config = _p_commons.TOEXTEND(_c, base_config);
 		},
 		UserId: function (c) {
-			base_config = _p_commons.TOEXTEND({UserId: c}, base_config);
+			base_config = _p_commons.TOEXTEND({ UserId: c }, base_config);
 		},
 		UserName: function (c) {
-			base_config = _p_commons.TOEXTEND({UserName: c}, base_config);
+			base_config = _p_commons.TOEXTEND({ UserName: c }, base_config);
 		},
 		ServiceName: function (c) {
-			base_config = _p_commons.TOEXTEND({ServiceName: c}, base_config);
+			base_config = _p_commons.TOEXTEND({ ServiceName: c }, base_config);
 		},
 		ExtInfo: function (c) {
-			base_config = _p_commons.TOEXTEND({ExtInfo: c}, base_config);
+			base_config = _p_commons.TOEXTEND({ ExtInfo: c }, base_config);
 		},
-		StringConfig: function(f, c) {
+		StringConfig: function (f, c) {
 			var _c = {};
 			_c[f] = c;
 			base_config = _p_commons.TOEXTEND(_c, base_config);
@@ -4945,7 +4949,7 @@ BOOMR_check_doc_domain();
 
 	// init BOOMERANG plugs
 	var initPlugs = function () {
-		if (_p_del_plugs.indexOf(_p_commons.SPA.name) > -1 || _p_del_plugs.indexOf(_p_commons.HISTORY.name) >-1) {
+		if (_p_del_plugs.indexOf(_p_commons.SPA.name) > -1 || _p_del_plugs.indexOf(_p_commons.HISTORY.name) > -1) {
 			_g.removeDelPlugs(_p_commons.SPA.name);
 			_g.removeDelPlugs(_p_commons.HISTORY.name);
 		}
@@ -4956,7 +4960,7 @@ BOOMR_check_doc_domain();
 		});
 		if (_p_enable_plugs.hasOwnProperty(_p_commons.AUTOXHR) && _p_enable_plugs[_p_commons.AUTOXHR.name].enable === _p_commons.TRUE) {
 			if (!_p_enable_plugs.hasOwnProperty(_p_commons.RT)) {
-				_p_enable_plugs = _p_commons.TOEXTEND(_p_enable_plugs, {RT: _p_boomerang_plugs[_p_commons.RT]});
+				_p_enable_plugs = _p_commons.TOEXTEND(_p_enable_plugs, { RT: _p_boomerang_plugs[_p_commons.RT] });
 			}
 		}
 		BOOMR.window.BOOMR.plugins = _p_commons.TOPLAINOBJECT(_p_enable_plugs);
@@ -4972,9 +4976,9 @@ BOOMR_check_doc_domain();
 			} else if (req && req.resource && req.resource.type === 'fetch') {
 				BOOMR['rid'] = BOOMR.utils.generateId(10);
 				req.resource['rid'] = BOOMR.rid;
-				var header = {'P-Request-Id': BOOMR.rid, 'P-Page-Id': BOOMR.window.BOOMR.pageId};
+				var header = { 'P-Request-Id': BOOMR.rid, 'P-Page-Id': BOOMR.window.BOOMR.pageId };
 				if (base_config[_p_commons.USERID]) {
-					header = _p_commons.TOEXTEND(header, {'P-User-Id': base_config[_p_commons.USERID]()});
+					header = _p_commons.TOEXTEND(header, { 'P-User-Id': base_config[_p_commons.USERID]() });
 				}
 				req.resource.headers = header;
 			}
@@ -5009,27 +5013,27 @@ BOOMR_check_doc_domain();
 				_p_del_plugs.push(f);
 			}
 		},
-		stringConfig: function(f, c) {
+		stringConfig: function (f, c) {
 			if (c === _p_commons.ENABLE) {
 				_register.StringConfig(f, c);
-			} else if (f === _p_commons.UPURL){ 
+			} else if (f === _p_commons.UPURL) {
 				_register[f](c);
 			} else {
 				_p_del_plugs.push(f);
 			}
 		},
-		objectConfig: function(f, c) {
+		objectConfig: function (f, c) {
 			if (c[_p_commons.ENABLE] !== false || c[_p_commons.ENABLE] === undefined) {
 				_register[f](c);
 			} else {
 				_p_del_plugs.push(f);
 			}
 		},
-		functionConfig: function(f, c) {
+		functionConfig: function (f, c) {
 			_register[f](c);
 		},
-		removeDelPlugs: function(f) {
-			for(var i = 0, ilth = _p_del_plugs.length; i < ilth; i ++) {
+		removeDelPlugs: function (f) {
+			for (var i = 0, ilth = _p_del_plugs.length; i < ilth; i++) {
 				if (_p_del_plugs[i] === f) {
 					_p_del_plugs.splice(i, 1);
 					break;
@@ -5053,11 +5057,59 @@ BOOMR_check_doc_domain();
 			addHeaders();
 			addVars();
 		},
+		spaDealData: function (o, p) {
+			if (p['http.initiator'] && (p['http.initiator'] == 'spa_hard')) {
+				o['pid'] = p['pid'];
+				o['http.initiator'] = 'spa_hard';
+				p['http.initiator'] = 'spa';
+			} else if (o['http.initiator'] && (o['http.initiator'] == 'spa_hard')) {
+				p['pid'] = o['pid'];
+				p['http.initiator'] = 'spa_hard';
+				o['http.initiator'] = 'spa';
+			}
+			_g.spaSendData(o);
+			_g.spaSendData(p);
+		},
+		spaSendData: function (data) {
+			BOOMR.window.BOOMR.sendBeaconData(data);
+		},
+		spajudge: function (data) {
+			// judge boomerang plugins is or not indexof spa
+			var _p_flag = false;
+			if (BOOMR.window.BOOMR.plugins.hasOwnProperty('SPA')) {
+				// judge data is or not indexof http.initiator
+				// think this data is page load beacon
+				if (!data.hasOwnProperty('http.initiator')) {
+					_p_spa_data.push(data);
+					_p_flag = true;
+				} else {
+					if (!data['http.initiator']) {
+						_p_spa_data.push(data);
+						_p_flag = true;
+					} else if (data['http.initiator'] == 'spa_hard') {
+						if (!data.hasOwnProperty('nt_res_end') || !data.hasOwnProperty('nt_res_st') || !data.hasOwnProperty('nt_dns_st')) {
+							_p_spa_data.push(data);
+							_p_flag = true;
+						}
+					}
+				}
+
+				if (_p_spa_data.length == 2) {
+					delete INSIGHT.spajudge;
+					_g.spaDealData(_p_spa_data[0], _p_spa_data[1]);
+				}
+				return _p_flag;
+			} else {
+				delete INSIGHT.spajudge;
+				return false;
+			}
+		}
 	};
 
 	var INSIGHT = {
 		plugs: _p_plugs,
 		init: _g.init,
+		spajudge: _g.spajudge
 	};
 
 	if (!w.INSIGHT) {
@@ -5070,7 +5122,7 @@ BOOMR_check_doc_domain();
 			'ResourceTiming', 'RT', 'SPA', 'UserId', 'UserName', 'ServiceName', "ExtInfo"
 		];
 		// if you want to add request header of xhr, pls add filed to hear
-		_p_addvars = {uid: 'UserId', uname: 'UserName', sn: 'ServiceName', ext: "ExtInfo"};
+		_p_addvars = { uid: 'UserId', uname: 'UserName', sn: 'ServiceName', ext: "ExtInfo" };
 		_p_boomerang_plugs = BOOMR.window.BOOMR.plugins;
 
 	}(w));
