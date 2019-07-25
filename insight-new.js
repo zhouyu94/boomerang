@@ -198,8 +198,10 @@
 			.addVar('b.n', ua.getBrowser().name)
 			.addVar('b.v', ua.getBrowser().version)
 			.addVar('b.m', ua.getBrowser().major);
-		if (base_config[_p_addvars[k]] && base_config[_p_addvars[k]]()) {
-			BOOMR.window.BOOMR.addVar(k, base_config[_p_addvars[k]]());
+		for (var k in _p_addvars) {
+			if (base_config[_p_addvars[k]] && base_config[_p_addvars[k]]()) {
+				BOOMR.window.BOOMR.addVar(k, base_config[_p_addvars[k]]());
+			}
 		}
 	};
 
