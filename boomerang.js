@@ -3521,6 +3521,133 @@ BOOMR_check_doc_domain();
 		},
 
 		/**
+		 * this is only for send page load and spa_hard beacon
+		 * this is don't fire beacon event
+		 * @param {beacon} data 
+		 */
+		sendSpaBeaconData: function(data) {
+			var urlFirst = [], urlLast = [], params, paramsJoined,
+			url, img, useImg = true, xhr, ret;
+
+			BOOMR.debug("Ready to send beacon: " + BOOMR.utils.objectToString(data));
+
+			// Use the override URL if given
+			impl.beacon_url = impl.beacon_url_override || impl.beacon_url;
+
+			// Check that the beacon_url was set first
+			if (!impl.beacon_url) {
+				BOOMR.debug("No beacon URL, so skipping.");
+				return false;
+			}
+
+			// Check that we have data to send
+			if (data.length === 0) {
+				return false;
+			}
+
+			// get high- and low-priority variables first, which remove any of
+			// those vars from data
+			urlFirst = this.getVarsOfPriority(data, -1);
+			urlLast  = this.getVarsOfPriority(data, 1);
+
+			// merge the 3 lists
+			params = urlFirst.concat(this.getVarsOfPriority(data, 0), urlLast);
+			paramsJoined = params.join("&");
+
+			// If beacon_url is protocol relative, make it https only
+			if (impl.beacon_url_force_https && impl.beacon_url.match(/^\/\//)) {
+				impl.beacon_url = "https:" + impl.beacon_url;
+			}
+
+			// if there are already url parameters in the beacon url,
+			// change the first parameter prefix for the boomerang url parameters to &
+			url = impl.beacon_url + ((impl.beacon_url.indexOf("?") > -1) ? "&" : "?") + paramsJoined;
+
+			// Try to send an IMG beacon if possible (which is the most compatible),
+			// otherwise send an XHR beacon if the  URL length is longer than 2,000 bytes.
+			//
+			if (impl.beacon_type === "GET") {
+				useImg = true;
+
+				if (url.length > BOOMR.constants.MAX_GET_LENGTH) {
+					((window.console && (console.warn || console.log)) || function() {})("Boomerang: Warning: Beacon may not be sent via GET due to payload size > 2000 bytes");
+				}
+			}
+			else if (impl.beacon_type === "POST" || url.length > BOOMR.constants.MAX_GET_LENGTH) {
+				// switch to a XHR beacon if the the user has specified a POST OR GET length is too long
+				useImg = false;
+			}
+
+			//
+			// Try the sendBeacon API first.
+			// But if beacon_type is set to "GET", dont attempt
+			// sendBeacon API call
+			//
+			if (w && w.navigator &&
+				typeof w.navigator.sendBeacon === "function" &&
+				BOOMR.utils.isNative(w.navigator.sendBeacon) &&
+				typeof w.Blob === "function" &&
+				impl.beacon_type !== "GET" &&
+				// As per W3C, The sendBeacon method does not provide ability to pass any
+				// header other than 'Content-Type'. So if we need to send data with
+				// 'Authorization' header, we need to fallback to good old xhr.
+				typeof impl.beacon_auth_token === "undefined" &&
+				!impl.beacon_disable_sendbeacon) {
+				// note we're using sendBeacon with &sb=1
+				var blobData = new w.Blob([paramsJoined + "&sb=1"], {
+					type: "application/x-www-form-urlencoded"
+				});
+
+				if (w.navigator.sendBeacon(impl.beacon_url, blobData)) {
+					return true;
+				}
+
+				// sendBeacon was not successful, try Image or XHR beacons
+			}
+
+			// If we don't have XHR available, force an image beacon and hope
+			// for the best
+			if (!BOOMR.orig_XMLHttpRequest && (!w || !w.XMLHttpRequest)) {
+				useImg = true;
+			}
+
+			if (useImg) {
+				//
+				// Image beacon
+				//
+
+				// just in case Image isn't a valid constructor
+				try {
+					img = new Image();
+				}
+				catch (e) {
+					BOOMR.debug("Image is not a constructor, not sending a beacon");
+					return false;
+				}
+
+				img.src = url;
+			}
+			else {
+				//
+				// XHR beacon
+				//
+
+				// Send a form-encoded XHR POST beacon
+				xhr = new (BOOMR.window.orig_XMLHttpRequest || BOOMR.orig_XMLHttpRequest || BOOMR.window.XMLHttpRequest)();
+				try {
+					this.sendXhrPostBeacon(xhr, paramsJoined);
+				}
+				catch (e) {
+					// if we had an exception with the window XHR object, try our IFRAME XHR
+					xhr = new BOOMR.boomerang_frame.XMLHttpRequest();
+					this.sendXhrPostBeacon(xhr, paramsJoined);
+				}
+			}
+
+			return true;
+		},
+
+		/**
 		 * Determines whether or not a Page Load beacon has been sent.
 		 *
 		 * @returns {boolean} True if a Page Load beacon has been sent.
@@ -4992,8 +5119,8 @@ BOOMR_check_doc_domain();
 			.addVar('b.n', ua.getBrowser().name)
 			.addVar('b.v', ua.getBrowser().version)
 			.addVar('b.m', ua.getBrowser().major);
-		for (var k in _p_addvars) {
-			BOOMR.window.BOOMR.addVar(k, base_config[_p_addvars[k]]())
+		if (base_config[_p_addvars[k]] && base_config[_p_addvars[k]]()) {
+			BOOMR.window.BOOMR.addVar(k, base_config[_p_addvars[k]]());
 		}
 	};
 
@@ -5071,7 +5198,7 @@ BOOMR_check_doc_domain();
 			_g.spaSendData(p);
 		},
 		spaSendData: function (data) {
-			BOOMR.window.BOOMR.sendBeaconData(data);
+			BOOMR.window.BOOMR.sendSpaBeaconData(data);
 		},
 		spajudge: function (data) {
 			// judge boomerang plugins is or not indexof spa
