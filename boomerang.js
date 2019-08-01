@@ -3436,6 +3436,13 @@ BOOMR_check_doc_domain();
 				}
 			}
 
+			// judge BOOMR has spa plugin and  `http.initiator` field. 
+			// if not have spa plugin and `http.initiator` is null or ''
+			// add `http.initiator` = page, think this is page request
+			if (!BOOMR.window.BOOMR.plugins.hasOwnProperty('SPA') &&  (!data.hasOwnProperty('http.initiator') || !data['http.initiator'])) {
+				paramsJoined = paramsJoined + '&http.initiator=page';
+			}
+
 			// Try to send an IMG beacon if possible (which is the most compatible),
 			// otherwise send an XHR beacon if the  URL length is longer than 2,000 bytes.
 			//
@@ -5076,10 +5083,6 @@ BOOMR_check_doc_domain();
 
 	// init BOOMERANG plugs
 	var initPlugs = function () {
-		if (_p_del_plugs.indexOf(_p_commons.SPA.name) > -1 || _p_del_plugs.indexOf(_p_commons.HISTORY.name) > -1) {
-			_g.removeDelPlugs(_p_commons.SPA.name);
-			_g.removeDelPlugs(_p_commons.HISTORY.name);
-		}
 		Object.keys(_p_boomerang_plugs).forEach(function (key) {
 			if (_p_del_plugs.indexOf(key) === -1) {
 				_p_enable_plugs[key] = _p_boomerang_plugs[key];
@@ -5230,7 +5233,7 @@ BOOMR_check_doc_domain();
 				return _p_flag;
 			} else {
 				delete INSIGHT.spajudge;
-				return false;
+				return _p_flag;
 			}
 		}
 	};

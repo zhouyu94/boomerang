@@ -3,7 +3,7 @@
   "version": "1.621.0",
   "releaseVersion": "1",
   "buildNumber": "0",
-  "revision": "5",
+  "revision": "6",
   "description": "boomerang always comes back, except when it hits something",
   "main": "boomerang.js",
   "directories": {

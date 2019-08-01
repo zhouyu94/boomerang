@@ -155,10 +155,6 @@
 
 	// init BOOMERANG plugs
 	var initPlugs = function () {
-		if (_p_del_plugs.indexOf(_p_commons.SPA.name) > -1 || _p_del_plugs.indexOf(_p_commons.HISTORY.name) > -1) {
-			_g.removeDelPlugs(_p_commons.SPA.name);
-			_g.removeDelPlugs(_p_commons.HISTORY.name);
-		}
 		Object.keys(_p_boomerang_plugs).forEach(function (key) {
 			if (_p_del_plugs.indexOf(key) === -1) {
 				_p_enable_plugs[key] = _p_boomerang_plugs[key];
@@ -309,7 +305,7 @@
 				return _p_flag;
 			} else {
 				delete INSIGHT.spajudge;
-				return false;
+				return _p_flag;
 			}
 		}
 	};
